@@ -162,11 +162,11 @@ public class UserServiceImpl implements UserService{
             List<String> roles = user.getRoles();
             boolean roleRemove = false;
 
-            if (roles.contains("ROLE_ADMIN")){
-                roles.remove("ROLE_ADMIN");
+            if (roles.contains("ADMIN")){
+                roles.remove("ADMIN");
                 roleRemove = true;
             }else {
-                roles.add("ROLE_ADMIN");
+                roles.add("ADMIN");
             }
 
             userRepo.save(user);

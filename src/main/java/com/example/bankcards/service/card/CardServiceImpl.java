@@ -299,7 +299,7 @@ public class CardServiceImpl implements CardService{
 
     private void checkPermission(MyUser owner){
         MyUser currentUser = userService.getCurrentUser();
-        if (!currentUser.equals(owner) && currentUser.getRoles().stream().noneMatch(role -> role.equals("ROLE_ADMIN"))) {
+        if (!currentUser.equals(owner) && currentUser.getRoles().stream().noneMatch(role -> role.equals("ADMIN"))) {
             log.warn("Access denied for user {} to resource owned by {}", currentUser.getName(), owner.getName());
             throw new AccessDeniedException("Access denied: you are neither the owner nor the admin");
         }

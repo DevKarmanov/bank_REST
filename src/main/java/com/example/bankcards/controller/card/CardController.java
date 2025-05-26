@@ -48,11 +48,9 @@ public interface CardController {
     );
 
     @GetMapping("/search/by-number/{cardNumber}")
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     ResponseEntity<?> getCardByNumber(@PathVariable String cardNumber);
 
     @GetMapping("/search/by-id/{cardId}")
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     ResponseEntity<?> getCardById(@PathVariable Long cardId);
 
     @PostMapping("/create")
