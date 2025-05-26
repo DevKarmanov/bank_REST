@@ -1,0 +1,760 @@
+openapi: 3.0.0
+info:
+  title: Bank Cards API
+  version: 1.0.0
+  description: API for managing bank cards and user operations
+
+servers:
+  - url: http://localhost:8083
+    description: Local development server
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error code
+          enum:
+            - invalid_refresh_token
+            - bad_credentials
+            - account_disabled
+            - user_already_exists
+            - illegal_argument
+            - card_not_found
+            - card_creation_error
+            - access_denied
+            - insufficient_funds
+            - invalid_card_state
+            - internal_server_error
+        message:
+          type: string
+          description: Error message
+
+    AuthRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          description: User's username
+        password:
+          type: string
+          description: User's password
+
+    AuthResponse:
+      type: object
+      properties:
+        jwtToken:
+          type: string
+          description: JWT access token
+        refreshToken:
+          type: string
+          description: JWT refresh token
+
+    UserDtoRequest:
+      type: object
+      required:
+        - name
+        - password
+        - role
+      properties:
+        name:
+          type: string
+          description: User's name
+        password:
+          type: string
+          description: User's password
+        role:
+          type: array
+          items:
+            type: string
+            enum: [ROLE_USER, ROLE_ADMIN]
+          description: User roles
+
+    UserPatchRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: New user name
+
+    CardDtoResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        cardNumber:
+          type: string
+          description: Full card number (only returned on creation)
+        maskedCardNumber:
+          type: string
+          description: Masked card number (e.g., ****1234)
+        expirationDate:
+          type: string
+          format: date
+        state:
+          type: string
+          enum: [ACTIVE, BLOCKED]
+        balance:
+          type: number
+          format: float
+
+    CardDtoForSearchResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        maskedCardNumber:
+          type: string
+        expirationDate:
+          type: string
+          format: date
+        state:
+          type: string
+          enum: [ACTIVE, BLOCKED]
+        balance:
+          type: number
+          format: float
+
+    CardPageResponse:
+      type: object
+      properties:
+        cards:
+          type: array
+          items:
+            $ref: '#/components/schemas/CardDtoResponse'
+        isLast:
+          type: boolean
+        totalPages:
+          type: integer
+        totalElements:
+          type: integer
+        isFirst:
+          type: boolean
+        numberOfElements:
+          type: integer
+
+    BlockRequestDto:
+      type: object
+      properties:
+        id:
+          type: integer
+        cardId:
+          type: integer
+        reason:
+          type: string
+        requestDate:
+          type: string
+          format: date-time
+
+    BlockRequestPageResponse:
+      type: object
+      properties:
+        blockRequests:
+          type: array
+          items:
+            $ref: '#/components/schemas/BlockRequestDto'
+        isLast:
+          type: boolean
+        totalPages:
+          type: integer
+        totalElements:
+          type: integer
+        isFirst:
+          type: boolean
+        numberOfElements:
+          type: integer
+security:
+  - BearerAuth: []
+
+paths:
+  /api/v1/auth/register:
+    post:
+      summary: Register a new user
+      security: []
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserDtoRequest'
+      responses:
+        '201':
+          description: User successfully registered
+        '409':
+          description: User already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: user_already_exists
+                message: A user with this name already exists
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: illegal_argument
+                message: Name and password must not be empty
+
+  /api/v1/auth/login:
+    post:
+      summary: Get access and refresh tokens
+      security: []
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRequest'
+      responses:
+        '200':
+          description: Successfully authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: bad_credentials
+                message: Invalid username or password
+        '403':
+          description: Account is disabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: account_disabled
+                message: User account is disabled
+
+  /api/v1/auth/refresh-token:
+    post:
+      summary: Refresh access token using refresh token
+      security: []
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refreshToken
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          description: Token successfully refreshed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: invalid_refresh_token
+                message: Invalid refresh token
+
+  /api/v1/card/my:
+    get:
+      summary: Get current user's cards
+      tags:
+        - Cards
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+        - name: pageNumber
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+      responses:
+        '200':
+          description: List of user's cards
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardPageResponse'
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: access_denied
+                message: 'Access denied: you are neither the owner nor the admin'
+
+  /api/v1/card/block-requests:
+    get:
+      summary: Get list of card block requests
+      tags:
+        - Cards
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+        - name: pageNumber
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+      responses:
+        '200':
+          description: List of block requests
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockRequestPageResponse'
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: access_denied
+                message: 'Access denied: you are neither the owner nor the admin'
+
+  /api/v1/card/balance/{id}:
+    get:
+      summary: Get card balance
+      tags:
+        - Cards
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Card balance
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  balance:
+                    type: string
+                    description: Formatted balance with 2 decimal places
+        '404':
+          description: Card not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: card_not_found
+                message: Card with this id doesn't exist
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: access_denied
+                message: 'Access denied: you are neither the owner nor the admin'
+
+  /api/v1/card/toggle/{id}:
+    patch:
+      summary: Toggle card state (block/unblock)
+      tags:
+        - Cards
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Card state successfully toggled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    enum: 
+                      - "You have successfully activated the card"
+                      - "You have successfully blocked the card"
+        '404':
+          description: Card not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: card_not_found
+                message: Card with this id doesn't exist
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: access_denied
+                message: Access denied
+
+  /api/v1/card/block-request/{cardId}:
+    post:
+      summary: Create card block request
+      tags:
+        - Cards
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: cardId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: reason
+          in: query
+          required: true
+          schema:
+            type: string
+            maxLength: 255
+      responses:
+        '201':
+          description: Block request created
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: illegal_argument
+                message: Block reason cannot be empty
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: access_denied
+                message: Only the cardholder can fulfill this request
+        '404':
+          description: Card not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: card_not_found
+                message: Card with this id doesn't exist
+
+  /api/v1/card/transfer:
+    post:
+      summary: Transfer money between cards
+      tags:
+        - Cards
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: fromCardId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: toCardId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: amount
+          in: query
+          required: true
+          schema:
+            type: number
+            format: float
+            minimum: 0.01
+      responses:
+        '200':
+          description: Transfer successful
+        '400':
+          description: Invalid transfer request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                insufficient_funds:
+                  value:
+                    error: insufficient_funds
+                    message: Insufficient funds for transfer
+                invalid_card_state:
+                  value:
+                    error: invalid_card_state
+                    message: 'Transaction not possible: one or both cards are inactive'
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: access_denied
+                message: You can only transfer between your own cards
+        '404':
+          description: Card not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: card_not_found
+                message: Card with this id doesn't exist
+
+  /api/v1/card/search/by-number/{cardNumber}:
+    get:
+      summary: Get card by number
+      tags:
+        - Cards
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: cardNumber
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Card details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardDtoForSearchResponse'
+        '404':
+          description: Card not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: card_not_found
+                message: Card with this numbers doesn't exist
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: access_denied
+                message: 'Access denied: you are neither the owner nor the admin'
+
+  /api/v1/card/search/by-id/{cardId}:
+    get:
+      summary: Get card by ID
+      tags:
+        - Cards
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: cardId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Card details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardDtoForSearchResponse'
+        '404':
+          description: Card not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: card_not_found
+                message: Card with this id doesn't exist
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: access_denied
+                message: 'Access denied: you are neither the owner nor the admin'
+
+  /api/v1/card/create:
+    post:
+      summary: Create a new card
+      tags:
+        - Cards
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: ownerName
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: Card successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardDtoResponse'
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: access_denied
+                message: Access denied
+        '404':
+          description: Owner not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: card_not_found
+                message: User with this name doesn't exist
+        '500':
+          description: Card creation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: card_creation_error
+                message: Error creating card for user
+
+  /api/v1/card/{id}:
+    delete:
+      summary: Delete a card
+      tags:
+        - Cards
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Card successfully deleted
+        '404':
+          description: Card not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: card_not_found
+                message: Card with this id doesn't exist
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: access_denied
+                message: Access denied
+
+  /api/v1/card/all:
+    get:
+      summary: Get all cards
+      tags:
+        - Cards
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+        - name: pageNumber
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+      responses:
+        '200':
+          description: List of all cards
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardPageResponse'
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: access_denied
+                message: Access denied

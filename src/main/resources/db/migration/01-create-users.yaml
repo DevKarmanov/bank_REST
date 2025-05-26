@@ -1,0 +1,46 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: DevKarmanov
+      changes:
+        - createTable:
+            tableName: my_user
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(255)
+              - column:
+                  name: password
+                  type: VARCHAR(255)
+              - column:
+                  name: is_enable
+                  type: BOOLEAN
+              - column:
+                  name: unlock_at
+                  type: TIMESTAMP
+              - column:
+                  name: block_reason
+                  type: VARCHAR(255)
+        - createTable:
+            tableName: my_user_roles
+            columns:
+              - column:
+                  name: my_user_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: roles
+                  type: VARCHAR(255)
+        - addForeignKeyConstraint:
+            baseTableName: my_user_roles
+            baseColumnNames: my_user_id
+            referencedTableName: my_user
+            referencedColumnNames: id
+            constraintName: fk_user_roles_user_id

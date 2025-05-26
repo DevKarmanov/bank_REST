@@ -1,0 +1,53 @@
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Build output
+/out/
+bin/
+gen/
+build/
+target/
+
+# Gradle
+.gradle/
+!gradle/wrapper/gradle-wrapper.jar
+.postgres_data
+
+# Maven
+.mvn/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+
+# Logs
+*.log
+
+# Temporary files
+*.class
+*.jar
+*.war
+*.ear
+*.tmp
+*.swp
+
+# Test reports
+/test-output/
+/surefire-reports/
+
+# Environment files
+.env
+.env.*
+
+# VSCode (если кто-то использует)
+.vscode/
+
+# OS trash
+*.~*
