@@ -130,6 +130,9 @@ public class UserServiceImpl implements UserService{
             if (name.trim().isEmpty()) {
                 throw new IllegalArgumentException("Name cannot be blank");
             }
+            if(getUserByName(name)!=null){
+                throw new UserAlreadyExist("User with this name already exist");
+            }
             user.setName(name);
         });
 
