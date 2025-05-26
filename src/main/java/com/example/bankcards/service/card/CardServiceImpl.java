@@ -287,8 +287,11 @@ public class CardServiceImpl implements CardService{
     }
 
     private boolean checkInvalidCard(Card card) {
-        return !card.getState().equals(State.ACTIVE);
+        boolean isInactive = !card.getState().equals(State.ACTIVE);
+        boolean isExpired = card.getExpirationDate().isBefore(LocalDate.now());
+        return isInactive || isExpired;
     }
+
 
 
     @Transactional(readOnly = true)
