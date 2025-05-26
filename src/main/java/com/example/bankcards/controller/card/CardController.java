@@ -13,7 +13,6 @@ import java.math.BigDecimal;
 public interface CardController {
 
     @GetMapping("/my")
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     ResponseEntity<?> getMyCards(
             @RequestParam(required = false, defaultValue = "10") int limit,
             @RequestParam(required = false, defaultValue = "0") int pageNumber,
