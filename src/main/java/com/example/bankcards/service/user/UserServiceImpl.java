@@ -169,6 +169,8 @@ public class UserServiceImpl implements UserService{
                 roles.add("ADMIN");
             }
 
+            user.setRoles(roles);
+
             userRepo.save(user);
 
             if (roleRemove){
