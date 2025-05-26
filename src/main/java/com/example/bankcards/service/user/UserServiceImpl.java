@@ -173,10 +173,14 @@ public class UserServiceImpl implements UserService{
 
             if (roles.isEmpty()) {
                 roles.add("USER");
-                logger.info("No roles left for user '{}', assigning default role 'USER'", userName);
+                logger.info("No other roles found, assigning default role 'USER' to user '{}'", userName);
             }
 
         } else {
+            if (roles.size() == 1) {
+                logger.info("Single role '{}' detected, replacing with ADMIN", roles.get(0));
+                roles.clear();
+            }
             roles.add("ADMIN");
             logger.info("ADMIN role added to user '{}'", userName);
         }
