@@ -15,6 +15,9 @@ public interface CardService {
 
     CardDtoResponse createCard(String ownerName);
 
+    void addMoney(Long cardId,BigDecimal amount);
+    void withdrawMoney(Long cardId, BigDecimal amount);
+
     String toggleCardState(Long cardId);
 
     void delCard(Long cardId);

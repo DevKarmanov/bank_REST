@@ -67,6 +67,18 @@ public interface CardController {
             @RequestParam(required = false, defaultValue = "10") int limit,
             @RequestParam(required = false, defaultValue = "0") int pageNumber
     );
+
+    @PostMapping("/add-money")
+    ResponseEntity<?> addMoney(
+            @RequestParam Long cardId,
+            @RequestParam BigDecimal amount
+    );
+
+    @PostMapping("/withdraw-money")
+    ResponseEntity<?> withdrawMoney(
+            @RequestParam Long cardId,
+            @RequestParam BigDecimal amount
+    );
 }
 
 

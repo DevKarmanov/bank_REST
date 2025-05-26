@@ -623,6 +623,149 @@ paths:
                 error: card_not_found
                 message: Card with this id doesn't exist
 
+  /api/v1/card/add-money/{cardId}:
+    post:
+      summary: Add money to card
+      tags:
+        - Cards
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: cardId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - amount
+              properties:
+                amount:
+                  type: number
+                  format: double
+                  minimum: 0.01
+                  example: 150.00
+      responses:
+        '200':
+          description: Money added successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Money added successfully
+        '400':
+          description: Invalid amount or request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: invalid_amount
+                message: Amount must be greater than 0
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: access_denied
+                message: Only the cardholder or admin can top up the card
+        '404':
+          description: Card not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: card_not_found
+                message: Card with this id doesn't exist
+
+  /api/v1/card/withdraw/{cardId}:
+    post:
+      summary: Withdraw money from card
+      tags:
+        - Cards
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: cardId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - amount
+              properties:
+                amount:
+                  type: number
+                  format: double
+                  minimum: 0.01
+                  example: 75.00
+      responses:
+        '200':
+          description: Money withdrawn successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Money withdrawn successfully
+        '400':
+          description: Invalid request or insufficient funds
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: insufficient_funds
+                message: Not enough money to complete the withdrawal
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                not_owner_nor_admin:
+                  summary: User is not the owner or admin
+                  value:
+                    error: access_denied
+                    message:
+                      Access denied: you are neither the owner nor the admin
+                generic_access_denied:
+                  summary: Generic access denial
+                  value:
+                    error: access_denied
+                    message: Access denied
+        '404':
+          description: Card not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: card_not_found
+                message: Card with this id doesn't exist
+
   /api/v1/card/transfer:
     post:
       summary: Transfer money between cards

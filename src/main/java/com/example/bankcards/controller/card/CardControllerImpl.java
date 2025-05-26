@@ -30,7 +30,7 @@ public class CardControllerImpl implements CardController {
 
     @Override
     public ResponseEntity<?> getBlockRequests(int limit, int pageNumber) {
-        return ResponseEntity.ok(cardService.getBlockRequests(limit,pageNumber));
+        return ResponseEntity.ok(cardService.getBlockRequests(limit, pageNumber));
     }
 
     @Override
@@ -47,7 +47,7 @@ public class CardControllerImpl implements CardController {
 
     @Override
     public ResponseEntity<?> requestCardBlock(Long cardId, String reason) {
-        cardService.requestCardBlock(cardId,reason);
+        cardService.requestCardBlock(cardId, reason);
         return ResponseEntity.ok("Application left successfully");
     }
 
@@ -85,5 +85,17 @@ public class CardControllerImpl implements CardController {
     public ResponseEntity<?> getAllCards(int limit, int pageNumber) {
         CardPageResponse response = cardService.getAllCards(limit, pageNumber);
         return ResponseEntity.ok(response);
+    }
+
+    @Override
+    public ResponseEntity<?> addMoney(Long cardId, BigDecimal amount) {
+        cardService.addMoney(cardId, amount);
+        return ResponseEntity.ok("Money added successfully");
+    }
+
+    @Override
+    public ResponseEntity<?> withdrawMoney(Long cardId, BigDecimal amount) {
+        cardService.withdrawMoney(cardId, amount);
+        return ResponseEntity.ok("Money withdrawn successfully");
     }
 }

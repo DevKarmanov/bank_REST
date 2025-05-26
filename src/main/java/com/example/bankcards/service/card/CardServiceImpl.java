@@ -123,6 +123,49 @@ public class CardServiceImpl implements CardService{
 
     @Transactional
     @Override
+    public void addMoney(Long cardId, BigDecimal amount) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            log.warn("Attempt to add invalid amount: {}", amount);
+            throw new IllegalArgumentException("Amount must be greater than zero");
+        }
+
+        Card card = getCard(cardId);
+
+        BigDecimal newBalance = card.getBalance().add(amount);
+        card.setBalance(newBalance);
+
+        cardRepo.save(card);
+
+        log.info("Added {} to card {}. New balance: {}", amount, cardId, newBalance);
+    }
+
+    @Transactional
+    @Override
+    public void withdrawMoney(Long cardId, BigDecimal amount) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            log.warn("Attempt to withdraw invalid amount: {}", amount);
+            throw new IllegalArgumentException("Amount must be greater than zero");
+        }
+
+        Card card = getCard(cardId);
+        checkPermission(card.getOwner());
+
+        if (card.getBalance().compareTo(amount) < 0) {
+            log.warn("Insufficient funds: trying to withdraw {}, but balance is {}", amount, card.getBalance());
+            throw new IllegalStateException("Insufficient funds");
+        }
+
+        BigDecimal newBalance = card.getBalance().subtract(amount);
+        card.setBalance(newBalance);
+
+        cardRepo.save(card);
+
+        log.info("Withdrew {} from card {}. New balance: {}", amount, cardId, newBalance);
+    }
+
+
+    @Transactional
+    @Override
     public String toggleCardState(Long cardId) {
         log.info("Toggling state for card with id: {}", cardId);
 

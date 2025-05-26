@@ -18,8 +18,7 @@ import java.time.LocalDate;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -39,6 +38,34 @@ class CardControllerImplTest {
 
     @MockBean
     private MyUserDetailsService myUserDetailsService;
+
+    @Test
+    @WithMockUser(username = "user", roles = "USER")
+    void testAddMoney() throws Exception {
+        Long cardId = 1L;
+        BigDecimal amount = BigDecimal.valueOf(100.00);
+
+        doNothing().when(cardService).addMoney(cardId, amount);
+
+        mockMvc.perform(post("/api/v1/card/add-money").with(csrf())
+                        .param("cardId", cardId.toString())
+                        .param("amount", amount.toString()))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(username = "user", roles = "USER")
+    void testWithdrawMoney() throws Exception {
+        Long cardId = 2L;
+        BigDecimal amount = BigDecimal.valueOf(50.00);
+
+        doNothing().when(cardService).withdrawMoney(cardId, amount);
+
+        mockMvc.perform(post("/api/v1/card/withdraw-money").with(csrf())
+                        .param("cardId", cardId.toString())
+                        .param("amount", amount.toString()))
+                .andExpect(status().isOk());
+    }
 
     @Test
     @WithMockUser(roles = "ADMIN")
