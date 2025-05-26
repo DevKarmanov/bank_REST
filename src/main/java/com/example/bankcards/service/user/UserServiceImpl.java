@@ -28,6 +28,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -156,29 +157,37 @@ public class UserServiceImpl implements UserService{
 
     @Transactional
     @Override
-    public String toggleUserAuthorities(String userName){
-            MyUser user = getCurrentUser();
+    public String toggleUserAuthorities(String userName) {
+        MyUser user = getUserByName(userName);
+        logger.info("Toggling ADMIN role for user '{}'", userName);
 
-            List<String> roles = user.getRoles();
-            boolean roleRemove = false;
+        List<String> roles = new ArrayList<>(user.getRoles());
+        logger.debug("Current roles for user '{}': {}", userName, roles);
 
-            if (roles.contains("ADMIN")){
-                roles.remove("ADMIN");
-                roleRemove = true;
-            }else {
-                roles.add("ADMIN");
-            }
+        boolean roleRemoved = false;
 
-            user.setRoles(roles);
+        if (roles.contains("ADMIN")) {
+            roles.remove("ADMIN");
+            logger.info("ADMIN role removed from user '{}'", userName);
+            roleRemoved = true;
+        } else {
+            roles.add("ADMIN");
+            logger.info("ADMIN role added to user '{}'", userName);
+        }
 
-            userRepo.save(user);
+        user.setRoles(roles);
+        userRepo.save(user);
+        logger.debug("Updated roles for user '{}': {}", userName, roles);
 
-            if (roleRemove){
-                return "User downgraded";
-            }else {
-                return "User promoted to admin";
-            }
+        if (roleRemoved) {
+            logger.info("User '{}' downgraded from ADMIN", userName);
+            return "User downgraded";
+        } else {
+            logger.info("User '{}' promoted to ADMIN", userName);
+            return "User promoted to admin";
+        }
     }
+
 
     @Transactional
     @Override
