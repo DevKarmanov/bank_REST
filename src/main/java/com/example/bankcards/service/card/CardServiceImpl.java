@@ -130,6 +130,11 @@ public class CardServiceImpl implements CardService{
         }
 
         Card card = getCard(cardId);
+        if (checkInvalidCard(card)){
+            log.warn("Invalid card state detected: {}",
+                    card.getState());
+            throw new InvalidCardStateException("Account replenishment is impossible: card is inactive");
+        }
 
         BigDecimal newBalance = card.getBalance().add(amount);
         card.setBalance(newBalance);
@@ -149,6 +154,12 @@ public class CardServiceImpl implements CardService{
 
         Card card = getCard(cardId);
         checkPermission(card.getOwner());
+
+        if (checkInvalidCard(card)){
+            log.warn("Invalid card state detected: {}",
+                    card.getState());
+            throw new InvalidCardStateException("Withdrawal is not possible: card is inactive");
+        }
 
         if (card.getBalance().compareTo(amount) < 0) {
             log.warn("Insufficient funds: trying to withdraw {}, but balance is {}", amount, card.getBalance());
