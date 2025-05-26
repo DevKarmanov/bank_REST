@@ -623,7 +623,7 @@ paths:
                 error: card_not_found
                 message: Card with this id doesn't exist
 
-  /api/v1/card/add-money/{cardId}:
+  /api/v1/card/add-money:
     post:
       summary: Add money to card
       tags:
@@ -632,25 +632,18 @@ paths:
         - BearerAuth: []
       parameters:
         - name: cardId
-          in: path
+          in: query
           required: true
           schema:
             type: integer
             format: int64
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - amount
-              properties:
-                amount:
-                  type: number
-                  format: double
-                  minimum: 0.01
-                  example: 150.00
+        - name: amount
+          in: query
+          required: true
+          schema:
+            type: number
+            format: double
+            minimum: 0.01
       responses:
         '200':
           description: Money added successfully
@@ -690,7 +683,7 @@ paths:
                 error: card_not_found
                 message: Card with this id doesn't exist
 
-  /api/v1/card/withdraw/{cardId}:
+  /api/v1/card/withdraw-money:
     post:
       summary: Withdraw money from card
       tags:
@@ -699,25 +692,18 @@ paths:
         - BearerAuth: []
       parameters:
         - name: cardId
-          in: path
+          in: query
           required: true
           schema:
             type: integer
             format: int64
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - amount
-              properties:
-                amount:
-                  type: number
-                  format: double
-                  minimum: 0.01
-                  example: 75.00
+        - name: amount
+          in: query
+          required: true
+          schema:
+            type: number
+            format: double
+            minimum: 0.01
       responses:
         '200':
           description: Money withdrawn successfully
@@ -749,8 +735,7 @@ paths:
                   summary: User is not the owner or admin
                   value:
                     error: access_denied
-                    message:
-                      Access denied: you are neither the owner nor the admin
+                    message: "Access denied: you are neither the owner nor the admin"
                 generic_access_denied:
                   summary: Generic access denial
                   value:
