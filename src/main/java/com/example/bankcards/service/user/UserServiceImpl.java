@@ -170,6 +170,12 @@ public class UserServiceImpl implements UserService{
             roles.remove("ADMIN");
             logger.info("ADMIN role removed from user '{}'", userName);
             roleRemoved = true;
+
+            if (roles.isEmpty()) {
+                roles.add("USER");
+                logger.info("No roles left for user '{}', assigning default role 'USER'", userName);
+            }
+
         } else {
             roles.add("ADMIN");
             logger.info("ADMIN role added to user '{}'", userName);
