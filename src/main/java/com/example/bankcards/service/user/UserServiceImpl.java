@@ -8,6 +8,7 @@ import com.example.bankcards.dto.response.auth.AuthResponse;
 import com.example.bankcards.entity.user.MyUser;
 import com.example.bankcards.exception.user.UserAlreadyExist;
 import com.example.bankcards.exception.user.UserDeletionException;
+import com.example.bankcards.repository.CardBlockRequestRepo;
 import com.example.bankcards.repository.MyUserRepo;
 import com.example.bankcards.security.service.jwt.JwtService;
 import jakarta.transaction.Transactional;
@@ -37,13 +38,15 @@ public class UserServiceImpl implements UserService{
     private final AuthenticationManager authenticationManager;
     private final UserDetailsService userDetailsService;
     private final JwtService jwtService;
+    private final CardBlockRequestRepo cardBlockRequestRepo;
 
-    public UserServiceImpl(MyUserRepo userRepo, PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager, UserDetailsService userDetailsService, JwtService jwtService) {
+    public UserServiceImpl(MyUserRepo userRepo, PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager, UserDetailsService userDetailsService, JwtService jwtService, CardBlockRequestRepo cardBlockRequestRepo) {
         this.userRepo = userRepo;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
         this.userDetailsService = userDetailsService;
         this.jwtService = jwtService;
+        this.cardBlockRequestRepo = cardBlockRequestRepo;
     }
 
     @Transactional
@@ -108,8 +111,8 @@ public class UserServiceImpl implements UserService{
     @Transactional
     @Override
     public void delUser(String name){
-        MyUser user = getCurrentUser();
-
+        MyUser user = getUserByName(name);
+        cardBlockRequestRepo.deleteAllByRequestedBy(user);
         try {
             userRepo.delete(user);
         }catch (Exception e){

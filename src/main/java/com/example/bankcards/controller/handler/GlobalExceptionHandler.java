@@ -6,6 +6,7 @@ import com.example.bankcards.exception.card.InsufficientFundsException;
 import com.example.bankcards.exception.card.InvalidCardStateException;
 import com.example.bankcards.exception.jwt.InvalidRefreshTokenException;
 import com.example.bankcards.exception.user.UserAlreadyExist;
+import com.example.bankcards.exception.user.UserDeletionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -26,6 +27,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<?> handleInvalidRefreshToken(InvalidRefreshTokenException ex) {
         logger.warn("Invalid refresh token: {}", ex.getMessage());
         return buildResponse(HttpStatus.UNAUTHORIZED, "invalid_refresh_token", ex.getMessage());
+    }
+
+    @ExceptionHandler(UserDeletionException.class)
+    public ResponseEntity<Map<String, String>> handleUserDeletion(UserDeletionException ex) {
+        logger.error("Failed to delete user: {}", ex.getMessage(), ex);
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "user_deletion_error", ex.getMessage());
     }
 
     @ExceptionHandler(BadCredentialsException.class)
